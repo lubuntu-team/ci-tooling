@@ -39,7 +39,11 @@
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>{{ SHELL_COMMAND }}</command>
+      <command>
+        git clone {{ UPSTREAM_URL }} upstream &&
+        export DATE="$(head -1 {{ NAME }}/debian/changelog | sed -n '/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}' | cut -d '-' -f1)+git$(date +'%Y%m%d%H%M')" &&
+        echo $DATE
+      </command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>
