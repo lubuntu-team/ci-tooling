@@ -45,7 +45,7 @@ mv -v debian {{ NAME }};
 git clone {{ UPSTREAM_URL }} upstream;
 export VERSION="$(head -1 {{ NAME }}/debian/changelog | sed -n '/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}' | cut -d '-' -f1)+git$(date +'%Y%m%d%H%M')";
 sed -i "1i{{ NAME }} ($VERSION-0ubuntu1~ppa1) {{ RELEASE }}; urgency=low\n\n  * CI upload.\n\n &#8211;&#8211; Lugito &lt;info@lubuntu.me&gt;  $(date +'%a, %d %b %Y %T %z')\n" {{ NAME }}/debian/changelog;
-tar cvf {{ NAME }}_$VERSION.orig.tar;
+tar cvf {{ NAME }}_$VERSION.orig.tar upstream;
 gzip {{ NAME }}_$VERSION.orig.tar;
 (cd {{ NAME }}; debuild -S -d -sa; dput {{ UPLOAD_TARGET }} ../{{ NAME }}_$VERSION-0ubuntu1~ppa1_source.changes)
       </command>
