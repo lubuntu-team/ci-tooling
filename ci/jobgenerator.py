@@ -115,7 +115,10 @@ class Generator:
 
         # Assign the packagebuild template to a variable
         with open("templates/packagebuild.xml") as templatef:
-            template = Template(templatef)
+            template = ""
+            for text in templatef.readlines():
+                template += text
+            template = Template(template)
 
         # Authenticate to the server
         server = Jenkins(api_site, username=api_user, password=api_key)
@@ -124,14 +127,14 @@ class Generator:
         # job config for each if they match. If there's no existing job found,
         # just create it
         metadata = self.parse_metadata()
-        jobs = {}
+        jobs = []
 
         for job_name, job_instance in server.get_jobs():
             jobs.append(job_name)
 
         for package in metadata:
             for release in package["releases"]:
-                package_name = package["name"] + "_" + release
+                package_name = release + "_" + package["name"]
                 url = package["packaging_url"]
                 branch = package["packaging_branch"]
                 # TODO: This is just a dummy command to run in order to test
@@ -143,7 +146,7 @@ class Generator:
                     job = server.get_job(package_name)
                     job.update_config(package_config)
                 else:
-                    job = server.create_job(package_name, package_config)
+                    job = server.create_job(package_name, str(package_config))
 
 
 if __name__ == "__main__":
