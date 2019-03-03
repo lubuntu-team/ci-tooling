@@ -23,7 +23,18 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 class Generator:
-    def clone_repository(self):
+    def clone_metadata(self):
+        """Clone the metadata repository using the values set in the env vars
+
+        The METADATA_URL and METADATA_REPO_NAME env vars must be set to use
+        this function.
+
+        The repository must have a ci.conf file in YAML format.
+
+        This uses Git to clone the given repository - other VCSes are not
+        supported at this time.
+        """
+
         # Assuming this is ran inside Jenkins, this fetches the env vars set in
         # the job config. If those don't exist, we need to throw an error,
         # because otherwise we have no metadata to actually pull from
@@ -46,7 +57,34 @@ class Generator:
         finally:
             rmtree(metadata_loc)
 
+        return metadata_conf
+
+    def parse_metadata(self):
+        """Parse the data pulled from clone_metadata
+
+        Allow the user to be able to set default key values, resulting in
+        shorter and cleaner configuration files.
+        """
+
+        metadata_conf = self.clone_metadata()
+        metadata_req_keys = ["name", "packaging_url", "packaging_branch",
+                             "upload_target", "releases"]
+        metadata_opt_keys = ["upstream_url", "upstream_branch"]
+
+        for package in metadata_conf["repositories"]:
+            # Load defaults in if they're not there, ignore the optional ones
+            for mkey in metadata_req_keys:
+                if not mkey in package and mkey in metadata_conf["default"]:
+                    package[mkey] = metadata_conf["default"][mkey]
+            # Don't proceed if any of the keys in the config are invalid
+            for mkey in package:
+                if not mkey in metadata_req_keys and not mkey in \
+                    metadata_opt_keys:
+                    raise ValueError("Invalid key present:", mkey)
+
+        return metadata_conf["repositories"]
+
 
 if __name__ == "__main__":
     generator = Generator()
-    generator.clone_repository()
+    print(generator.parse_metadata())
