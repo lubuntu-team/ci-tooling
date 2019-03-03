@@ -16,11 +16,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import git
+import jenkinsapi
 from os import getenv
 from yaml import CLoader
 from yaml import load as yaml_load
+from jinja2 import Template
 from shutil import rmtree
 from tempfile import mkdtemp
+from jenkinsapi.jenkins import Jenkins
 
 class Generator:
     def clone_metadata(self):
@@ -83,6 +86,64 @@ class Generator:
                     raise ValueError("Invalid key present:", mkey)
 
         return metadata_conf["repositories"]
+
+    def create_jenkins_jobs(self):
+        """Interface with Jenkins to create the jobs required
+
+        This uses the Jenkins API to do the following tasks:
+         1. Assess which jobs are currently defined and if the jobs defined
+            in the metadata overlap with those, do an update of the job config
+            to match the current template.
+         2. If there are new jobs defined, create them. If there are jobs no
+            longer defined, remove them.
+         3. Update the per-release views to ensure the jobs are in the correct
+            views. If there are any releases no longer defined, remove them.
+
+        It involves use of the API_SITE, API_USER, and API_KEY variables from
+        Jenkins. These need to be private, so they are defined in the
+        system-wide Jenkins credential storage.
+        """
+
+        # Load the API values from the environment variables
+        api_site = getenv("API_SITE")
+        api_user = getenv("API_USER")
+        api_key = getenv("API_KEY")
+        for envvar in [api_site, api_user, api_key]:
+            if not envvar or envvar == "":
+                raise ValueError("API_SITE, API_USER, and API_KEY must be",
+                                 "defined")
+
+        # Assign the packagebuild template to a variable
+        with open("../templates/packagebuild.xml") as templatef:
+            template = Template(templatef)
+
+        # Authenticate to the server
+        server = Jenkins(api_site, username=api_user, password=api_key)
+
+        # Iterate through the packages we have in our metadata and update the
+        # job config for each if they match. If there's no existing job found,
+        # just create it
+        metadata = self.parse_metadata()
+        jobs = {}
+
+        for job_name, job_instance in server.get_jobs():
+            jobs.append(job_name)
+
+        for package in metadata:
+            for release in package["releases"]:
+                package_name = package["name"] + "_" + release
+                url = package["packaging_url"]
+                branch = package["packaging_branch"]
+                # TODO: This is just a dummy command to run in order to test
+                # the config updating
+                package_config = template.render(PACKAGING_URL=url,
+                                                 PACKAGING_BRANCH=branch,
+                                                 SHELL_COMMAND="echo test")
+                if package_name in jobs:
+                    job = server.get_job(package_name)
+                    job.update_config(package_config)
+                else:
+                    job = server.create_job(package_name, package_config)
 
 
 if __name__ == "__main__":
