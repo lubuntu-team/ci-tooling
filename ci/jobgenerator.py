@@ -144,7 +144,8 @@ class Generator:
                 package_config = template.render(PACKAGING_URL=url,
                                                  PACKAGING_BRANCH=branch,
                                                  UPSTREAM_URL=upstream,
-                                                 NAME=package["name"])
+                                                 NAME=package["name"],
+                                                 RELEASE=release)
                 if job_name in jobs:
                     job = server.get_job(job_name)
                     job.update_config(package_config)
