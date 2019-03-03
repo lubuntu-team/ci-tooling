@@ -148,4 +148,4 @@ class Generator:
 
 if __name__ == "__main__":
     generator = Generator()
-    print(generator.parse_metadata())
+    print(generator.create_jenkins_jobs())
