@@ -138,11 +138,13 @@ class Generator:
                 job_name = release + "_" + package["name"]
                 url = package["packaging_url"]
                 branch = package["packaging_branch"]
+                upstream = package["upstream_url"]
                 # TODO: This is just a dummy command to run in order to test
                 # the config updating
                 package_config = template.render(PACKAGING_URL=url,
                                                  PACKAGING_BRANCH=branch,
-                                                 SHELL_COMMAND="echo test")
+                                                 UPSTREAM_URL=upstream,
+                                                 NAME=package["name"])
                 if job_name in jobs:
                     job = server.get_job(job_name)
                     job.update_config(package_config)
