@@ -128,13 +128,14 @@ class Generator:
         # just create it
         metadata = self.parse_metadata()
         jobs = []
+        releases = set()
 
         for job_name, job_instance in server.get_jobs():
             jobs.append(job_name)
 
         for package in metadata:
             for release in package["releases"]:
-                package_name = release + "_" + package["name"]
+                job_name = release + "_" + package["name"]
                 url = package["packaging_url"]
                 branch = package["packaging_branch"]
                 # TODO: This is just a dummy command to run in order to test
@@ -142,11 +143,20 @@ class Generator:
                 package_config = template.render(PACKAGING_URL=url,
                                                  PACKAGING_BRANCH=branch,
                                                  SHELL_COMMAND="echo test")
-                if package_name in jobs:
-                    job = server.get_job(package_name)
+                if job_name in jobs:
+                    job = server.get_job(job_name)
                     job.update_config(package_config)
                 else:
-                    job = server.create_job(package_name, str(package_config))
+                    job = server.create_job(job_name, str(package_config))
+                    # With an existing job we can assume it's already in an
+                    # appropriate view. With new jobs, we should see if the
+                    # view exists, and if it doesn't, create it
+                    if release in server.views:
+                        view = server.views[release]
+                    else:
+                        view = server.views.create(release)
+
+                    view.add_job(job_name)
 
 
 if __name__ == "__main__":
