@@ -114,7 +114,7 @@ class Generator:
                                  "defined")
 
         # Assign the packagebuild template to a variable
-        with open("../templates/packagebuild.xml") as templatef:
+        with open("templates/packagebuild.xml") as templatef:
             template = Template(templatef)
 
         # Authenticate to the server
