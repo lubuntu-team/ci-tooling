@@ -43,7 +43,7 @@
 mkdir {{ NAME }};
 mv -v debian {{ NAME }};
 git clone {{ UPSTREAM_URL }} upstream;
-export VERSION="$(head -1 {{ NAME }}/debian/changelog | sed -n '/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}' | cut -d '-' -f1)+git$(date +'%Y%m%d%H%M')";
+export VERSION="$(head -1 {{ NAME }}/debian/changelog | sed -n '/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}' | cut -d '-' -f1)+git$(date +'%Y%m%d%H%M')~{{ RELEASE }}";
 export DEBFULLNAME="Lugito"
 export DEBEMAIL="info@lubuntu.me"
 tar cvf {{ NAME }}_$VERSION.orig.tar upstream;
