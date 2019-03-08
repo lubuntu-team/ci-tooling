@@ -129,7 +129,7 @@ class Generator:
             package_config = template.render(PACKAGING_URL=url,
                                              PACKAGING_BRANCH=branch,
                                              UPSTREAM_URL=upstream,
-                                             NAME=package["name"],
+                                             NAME=data["name"],
                                              RELEASE=release,
                                              UPLOAD_TARGET=upload_target)
         else:
