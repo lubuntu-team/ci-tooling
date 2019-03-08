@@ -40,7 +40,7 @@
       </threshold>
     </jenkins.triggers.ReverseBuildTrigger>
     <hudson.triggers.SCMTrigger>
-      <spec></spec>
+      <spec>*/5 * * * *</spec>
       <ignorePostCommitHooks>false</ignorePostCommitHooks>
     </hudson.triggers.SCMTrigger>
   </triggers>
