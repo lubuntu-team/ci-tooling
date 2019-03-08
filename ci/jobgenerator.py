@@ -87,6 +87,26 @@ class Generator:
 
         return metadata_conf["repositories"]
 
+    def auth_jenkins_server(self):
+        """Authenticate to the Jenkins server
+
+        This involves use of the API_SITE, API_USER, and API_KEY variables
+        set in Jenkins. These need to be private, so they are defined in the
+        system-wide Jenkins credential storage.
+        """
+        # Load the API values from the environment variables
+        api_site = getenv("API_SITE")
+        api_user = getenv("API_USER")
+        api_key = getenv("API_KEY")
+        for envvar in [api_site, api_user, api_key]:
+            if not envvar or envvar == "":
+                raise ValueError("API_SITE, API_USER, and API_KEY must be",
+                                 "defined")
+        # Authenticate to the server
+        server = Jenkins(api_site, username=api_user, password=api_key)
+
+        return server
+
     def create_jenkins_jobs(self):
         """Interface with Jenkins to create the jobs required
 
@@ -98,20 +118,10 @@ class Generator:
             longer defined, remove them.
          3. Update the per-release views to ensure the jobs are in the correct
             views. If there are any releases no longer defined, remove them.
-
-        It involves use of the API_SITE, API_USER, and API_KEY variables from
-        Jenkins. These need to be private, so they are defined in the
-        system-wide Jenkins credential storage.
         """
 
-        # Load the API values from the environment variables
-        api_site = getenv("API_SITE")
-        api_user = getenv("API_USER")
-        api_key = getenv("API_KEY")
-        for envvar in [api_site, api_user, api_key]:
-            if not envvar or envvar == "":
-                raise ValueError("API_SITE, API_USER, and API_KEY must be",
-                                 "defined")
+        # Authenticate to the Jenkins server
+        server = self.auth_jenkins_server()
 
         # Assign the packagebuild template to a variable
         with open("templates/packagebuild.xml") as templatef:
@@ -119,9 +129,6 @@ class Generator:
             for text in templatef.readlines():
                 template += text
             template = Template(template)
-
-        # Authenticate to the server
-        server = Jenkins(api_site, username=api_user, password=api_key)
 
         # Iterate through the packages we have in our metadata and update the
         # job config for each if they match. If there's no existing job found,
