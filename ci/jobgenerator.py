@@ -130,7 +130,7 @@ class Generator:
                                              PACKAGING_BRANCH=branch,
                                              UPSTREAM_URL=upstream,
                                              NAME=data["name"],
-                                             RELEASE=release,
+                                             RELEASE=data["release"],
                                              UPLOAD_TARGET=upload_target)
         else:
             raise ValueError("Invalid job type")
@@ -169,6 +169,7 @@ class Generator:
             for release in package["releases"]:
                 job_name = release + "_" + package["name"]
                 # Load the config given the current data
+                package["release"] = release
                 package_config = self.load_config("package", package)
                 if job_name in jobs:
                     job = server.get_job(job_name)
