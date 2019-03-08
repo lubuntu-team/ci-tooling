@@ -18,7 +18,11 @@
     </branches>
     <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
     <submoduleCfg class="list"/>
-    <extensions/>
+    <extensions>
+      <hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+        <relativeTargetDir>{{ NAME }}</relativeTargetDir>
+      </hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+    </extensions>
   </scm>
   <canRoam>true</canRoam>
   <disabled>false</disabled>
@@ -40,8 +44,6 @@
   <builders>
     <hudson.tasks.Shell>
       <command>
-mkdir {{ NAME }};
-mv -v debian {{ NAME }};
 git clone {{ UPSTREAM_URL }} upstream;
 export VERSION="$(head -1 {{ NAME }}/debian/changelog | sed -n '/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}' | cut -d '-' -f1)+git$(date +'%Y%m%d%H%M')~{{ RELEASE }}";
 export DEBFULLNAME="Lugito"
