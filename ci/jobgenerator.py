@@ -107,6 +107,36 @@ class Generator:
 
         return server
 
+    def load_config(self, job_type, data):
+        """Return a template that is a result of loading the data
+
+        This makes it easier to standardize several types of jobs
+        """
+
+        # The template name should always correspond with the job type
+        # Regardless of the job type, there should always be a template
+        with open("templates/" + job_type + ".xml") as templatef:
+            template = ""
+            for text in templatef.readlines():
+                template += text
+            template = Template(template)
+
+        if job_type == "package":
+            url = data["packaging_url"]
+            branch = data["packaging_branch"]
+            upstream = data["upstream_url"]
+            upload_target = data["upload_target"]
+            package_config = template.render(PACKAGING_URL=url,
+                                             PACKAGING_BRANCH=branch,
+                                             UPSTREAM_URL=upstream,
+                                             NAME=package["name"],
+                                             RELEASE=release,
+                                             UPLOAD_TARGET=upload_target)
+        else:
+            raise ValueError("Invalid job type")
+
+        return package_config
+
     def create_jenkins_jobs(self):
         """Interface with Jenkins to create the jobs required
 
@@ -124,11 +154,6 @@ class Generator:
         server = self.auth_jenkins_server()
 
         # Assign the packagebuild template to a variable
-        with open("templates/packagebuild.xml") as templatef:
-            template = ""
-            for text in templatef.readlines():
-                template += text
-            template = Template(template)
 
         # Iterate through the packages we have in our metadata and update the
         # job config for each if they match. If there's no existing job found,
@@ -143,18 +168,8 @@ class Generator:
         for package in metadata:
             for release in package["releases"]:
                 job_name = release + "_" + package["name"]
-                url = package["packaging_url"]
-                branch = package["packaging_branch"]
-                upstream = package["upstream_url"]
-                upload_target = package["upload_target"]
-                # TODO: This is just a dummy command to run in order to test
-                # the config updating
-                package_config = template.render(PACKAGING_URL=url,
-                                                 PACKAGING_BRANCH=branch,
-                                                 UPSTREAM_URL=upstream,
-                                                 NAME=package["name"],
-                                                 RELEASE=release,
-                                                 UPLOAD_TARGET=upload_target)
+                # Load the config given the current data
+                package_config = self.load_config("package", package)
                 if job_name in jobs:
                     job = server.get_job(job_name)
                     job.update_config(package_config)
