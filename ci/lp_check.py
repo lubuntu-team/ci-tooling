@@ -108,10 +108,10 @@ class LaunchpadCheck:
                 # passed
                 for binary in ppa.getPublishedBinaries():
                     if binary.status == "Pending":
-                        print(binary_package_name, "still publishing.")
+                        print(binary.binary_package_name, "still publishing.")
                         need_sleep = True
                     elif binary.status == "Published":
-                        print(binary_package_name, "published.")
+                        print(binary.binary_package_name, "published.")
                     else:
                         raise ValueError("One or more builds can't publish")
             except IndexError:
