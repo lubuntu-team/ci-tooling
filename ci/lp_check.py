@@ -122,7 +122,7 @@ class LaunchpadCheck:
                 sleep(300)
             else:
                 print("All builds have successfully published.")
-                break
+                return True
         # If we've timed out, raise an error
         raise ValueError("Timed out, contact Launchpad admins")
 
