@@ -48,6 +48,7 @@
   <builders>
     <hudson.tasks.Shell>
       <command>
+cd {{ NAME }}
 git checkout {{ DEFAULT_BRANCH }}
 git checkout {{ PACKAGING_BRANCH }}
 git merge --ff-only {{ DEFAULT_BRANCH }}
