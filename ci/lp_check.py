@@ -22,6 +22,20 @@ from launchpadlib.launchpad import Launchpad
 
 
 class LaunchpadCheck:
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-p", "--package", help="The source package",
+                            required=True)
+        parser.add_argument("-v", "--package-version", help="The package version",
+                            required=True)
+        parser.add_argument("-t", "--lp-team", help="Launchpad user with the PPA",
+                            required=True)
+        parser.add_argument("-r", "--ppa", help="Name of the Launchpad PPA",
+                            required=True)
+        args = parser.parse_args()
+        self.lp_person = args.lp_team
+        self.ppa_name = args.ppa
+
     def login(self):
         """Log in to Launchpad anonymously"""
         lp = Launchpad.login_anonymously("CI Infrastructure", "production",
@@ -105,18 +119,5 @@ class LaunchpadCheck:
         raise ValueError("Timed out, contact Launchpad admins")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--package", help="The source package",
-                        required=True)
-    parser.add_argument("-v", "--package-version", help="The package version",
-                        required=True)
-    parser.add_argument("-t", "--lp-team", help="Launchpad user with the PPA",
-                        required=True)
-    parser.add_argument("-r", "--ppa", help="Name of the Launchpad PPA",
-                        required=True)
-    args = parser.parse_args()
-    self.lp_person = args.lp_team
-    self.ppa_name = args.ppa
-
     lpcheck = LaunchpadCheck()
     lpcheck.verify_binaries_published()
