@@ -35,7 +35,7 @@ class LaunchpadCheck:
         args = parser.parse_args()
         self.lp_person = args.lp_team
         self.ppa_name = args.ppa
-        self.verify_binaries_published(package, package_version)
+        self.verify_binaries_published(args.package, args.package_version)
 
     def login(self):
         """Log in to Launchpad anonymously"""
