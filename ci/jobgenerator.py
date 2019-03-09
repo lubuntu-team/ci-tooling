@@ -121,9 +121,10 @@ class Generator:
                 template += text
             template = Template(template)
 
+        url = data["packaging_url"]
+        branch = data["packaging_branch"]
+
         if job_type == "package":
-            url = data["packaging_url"]
-            branch = data["packaging_branch"]
             upstream = data["upstream_url"]
             upload_target = data["upload_target"]
             package_config = template.render(PACKAGING_URL=url,
@@ -132,6 +133,12 @@ class Generator:
                                              NAME=data["name"],
                                              RELEASE=data["release"],
                                              UPLOAD_TARGET=upload_target)
+        elif job_type == "merger":
+            default_branch = data["default_branch"]
+            package_config = template.render(PACKAGING_URL=url,
+                                             PACKAGING_BRANCH=branch,
+                                             NAME=data["name"],
+                                             DEFAULT_BRANCH=default_branch)
         else:
             raise ValueError("Invalid job type")
 
@@ -153,8 +160,6 @@ class Generator:
         # Authenticate to the Jenkins server
         server = self.auth_jenkins_server()
 
-        # Assign the packagebuild template to a variable
-
         # Iterate through the packages we have in our metadata and update the
         # job config for each if they match. If there's no existing job found,
         # just create it
@@ -166,6 +171,21 @@ class Generator:
             jobs.append(job_name)
 
         for package in metadata:
+            # Create the merger jobs first
+            job_name = "merger_" + package["name"]
+            package_config = self.load_config("merger", package)
+            # TODO: This is duplicate code, and it should be consolidated
+            if job_name in jobs:
+                job = server.get_job(job_name)
+                job.update_config(package_config)
+            else:
+                job = server.create_job(job_name, str(package_config))
+                if "merger" in server.views:
+                    view = server.views["merger"]
+                else:
+                    view = server.views.create("merger")
+                view.add_job(job_name)
+
             for release in package["releases"]:
                 job_name = release + "_" + package["name"]
                 # Load the config given the current data
