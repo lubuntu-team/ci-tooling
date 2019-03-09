@@ -97,6 +97,13 @@ class LaunchpadCheck:
                         print(binary.arch_tag, "successfully built.")
                     else:
                         raise ValueError("One or more builds have an error")
+
+                # Before we verify binaries, we have to be able to read the
+                # records. There's a window we can encounter where the
+                # source is published but it has no record of any binaries,
+                # even before the binaries are actually processed
+                if len(ppa.getPublishedBinaries()) < 1:
+                    raise IndexError
                 # Make sure all of the binaries are in a good state if they've
                 # passed
                 for binary in ppa.getPublishedBinaries():
