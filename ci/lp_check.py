@@ -66,7 +66,7 @@ class LaunchpadCheck:
                 raise ValueError("Source package no longer exists")
             if status == "Published":
                 print("Source published.")
-                return lp, ppa
+                return lp, ppa_source
             elif status == "Pending":
                 # 60 seconds × 5 minutes = 300 seconds
                 sleep(300)
