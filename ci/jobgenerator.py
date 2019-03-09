@@ -71,7 +71,7 @@ class Generator:
 
         metadata_conf = self.clone_metadata()
         metadata_req_keys = ["name", "packaging_url", "packaging_branch",
-                             "upload_target", "releases"]
+                             "upload_target", "releases", "default_branch"]
         metadata_opt_keys = ["upstream_url", "upstream_branch"]
 
         for package in metadata_conf["repositories"]:
