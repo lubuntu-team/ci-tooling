@@ -53,9 +53,9 @@
       <command>
 cd {{ NAME }}
 git checkout {{ DEFAULT_BRANCH }}
-git checkout {{ PACKAGING_BRANCH }}
+git checkout -b {{ PACKAGING_BRANCH }} || git checkout {{ PACKAGING_BRANCH }}
 git merge --ff-only {{ DEFAULT_BRANCH }}
-git push origin {{ PACKAGING_BRANCH }}
+git push --set-upstream origin {{ PACKAGING_BRANCH }}
       </command>
     </hudson.tasks.Shell>
   </builders>
