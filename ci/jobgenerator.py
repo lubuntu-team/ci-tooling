@@ -72,7 +72,8 @@ class Generator:
         metadata_conf = self.clone_metadata()
         metadata_req_keys = ["name", "packaging_url",
                              "packaging_branch_unstable",
-                             "packaging_branch_stable", "upload_target",
+                             "packaging_branch_stable",
+                             "upload_target_unstable", "upload_target_stable",
                              "releases", "default_branch"]
         metadata_opt_keys = ["upstream_url", "upstream_branch"]
 
@@ -126,6 +127,8 @@ class Generator:
         url = data["packaging_url"]
         u_branch = data["packaging_branch_unstable"]
         s_branch = data["packaging_branch_stable"]
+        u_upload_target = data["upload_target_unstable"]
+        s_upload_target = data["upload_target_stable"]
 
         if job_type.startswith("package"):
             upstream = data["upstream_url"]
@@ -136,7 +139,8 @@ class Generator:
                                              UPSTREAM_URL=upstream,
                                              NAME=data["name"],
                                              RELEASE=data["release"],
-                                             UPLOAD_TARGET=upload_target)
+                                             UPLOAD_TARGET_U=u_upload_target,
+                                             UPLOAD_TARGET_S=s_upload_target)
         elif job_type == "merger":
             default_branch = data["default_branch"]
             package_config = template.render(PACKAGING_URL=url,
