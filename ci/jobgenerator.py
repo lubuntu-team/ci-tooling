@@ -70,8 +70,10 @@ class Generator:
         """
 
         metadata_conf = self.clone_metadata()
-        metadata_req_keys = ["name", "packaging_url", "packaging_branch",
-                             "upload_target", "releases", "default_branch"]
+        metadata_req_keys = ["name", "packaging_url",
+                             "packaging_branch_unstable",
+                             "packaging_branch_stable", "upload_target",
+                             "releases", "default_branch"]
         metadata_opt_keys = ["upstream_url", "upstream_branch"]
 
         for package in metadata_conf["repositories"]:
@@ -122,13 +124,15 @@ class Generator:
             template = Template(template)
 
         url = data["packaging_url"]
-        branch = data["packaging_branch"]
+        u_branch = data["packaging_branch_unstable"]
+        s_branch = data["packaging_branch_stable"]
 
-        if job_type == "package":
+        if job_type.startswith("package"):
             upstream = data["upstream_url"]
             upload_target = data["upload_target"]
             package_config = template.render(PACKAGING_URL=url,
-                                             PACKAGING_BRANCH=branch,
+                                             PACKAGING_BRANCH_U=u_branch,
+                                             PACKAGING_BRANCH_S=s_branch,
                                              UPSTREAM_URL=upstream,
                                              NAME=data["name"],
                                              RELEASE=data["release"],
@@ -136,7 +140,8 @@ class Generator:
         elif job_type == "merger":
             default_branch = data["default_branch"]
             package_config = template.render(PACKAGING_URL=url,
-                                             PACKAGING_BRANCH=branch,
+                                             PACKAGING_BRANCH_U=u_branch,
+                                             PACKAGING_BRANCH_S=s_branch,
                                              NAME=data["name"],
                                              DEFAULT_BRANCH=default_branch)
         else:
@@ -187,24 +192,27 @@ class Generator:
                 view.add_job(job_name)
 
             for release in package["releases"]:
-                job_name = release + "_" + package["name"]
                 # Load the config given the current data
                 package["release"] = release
-                package_config = self.load_config("package", package)
-                if job_name in jobs:
-                    job = server.get_job(job_name)
-                    job.update_config(package_config)
-                else:
-                    job = server.create_job(job_name, str(package_config))
-                    # With an existing job we can assume it's already in an
-                    # appropriate view. With new jobs, we should see if the
-                    # view exists, and if it doesn't, create it
-                    if release in server.views:
-                        view = server.views[release]
+                for jobtype in ["unstable", "stable"]:
+                    job_name = release + "_" + jobtype + "_" + package["name"]
+                    package_config = self.load_config("package-" + jobtype,
+                        package)
+                    if job_name in jobs:
+                        job = server.get_job(job_name)
+                        job.update_config(package_config)
                     else:
-                        view = server.views.create(release)
+                        job = server.create_job(job_name, str(package_config))
+                        # With an existing job we can assume it's already in an
+                        # appropriate view. With new jobs, we should see if the
+                        # view exists, and if it doesn't, create it
+                        viewname = release + " " + jobtype
+                        if viewname in server.views:
+                            view = server.views[viewname]
+                        else:
+                            view = server.views.create(viewname)
 
-                    view.add_job(job_name)
+                        view.add_job(job_name)
 
 
 if __name__ == "__main__":

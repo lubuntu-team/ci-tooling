@@ -15,12 +15,6 @@
       <hudson.plugins.git.BranchSpec>
         <name>*/{{ PACKAGING_BRANCH_U }}</name>
       </hudson.plugins.git.BranchSpec>
-      <hudson.plugins.git.BranchSpec>
-        <name>*/{{ PACKAGING_BRANCH_S }}</name>
-      </hudson.plugins.git.BranchSpec>
-      <hudson.plugins.git.BranchSpec>
-        <name>*/{{ DEFAULT_BRANCH }}</name>
-      </hudson.plugins.git.BranchSpec>
     </branches>
     <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
     <submoduleCfg class="list"/>
@@ -37,7 +31,7 @@
   <triggers>
     <jenkins.triggers.ReverseBuildTrigger>
       <spec></spec>
-      <upstreamProjects>jobgenerator</upstreamProjects>
+      <upstreamProjects>merger_{{ NAME }}</upstreamProjects>
       <threshold>
         <name>SUCCESS</name>
         <ordinal>0</ordinal>
@@ -45,23 +39,21 @@
         <completeBuild>true</completeBuild>
       </threshold>
     </jenkins.triggers.ReverseBuildTrigger>
-    <hudson.triggers.SCMTrigger>
-      <spec></spec>
-      <ignorePostCommitHooks>false</ignorePostCommitHooks>
-    </hudson.triggers.SCMTrigger>
   </triggers>
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
       <command>
-cd {{ NAME }}
-git checkout {{ DEFAULT_BRANCH }}
-git checkout -b {{ PACKAGING_BRANCH_S }} || git checkout {{ PACKAGING_BRANCH_S }}
-git merge --ff-only {{ DEFAULT_BRANCH }}
-git push --set-upstream origin {{ PACKAGING_BRANCH_S }} || echo "cannot push"
-git checkout -b {{ PACKAGING_BRANCH_U }} || git checkout {{ PACKAGING_BRANCH_U }}
-git merge --ff-only {{ PACKAGING_BRANCH_S }}
-git push --set-upstream origin {{ PACKAGING_BRANCH_U }} || echo "cannot push"
+git clone {{ UPSTREAM_URL }} upstream;
+export VERSION="$(head -1 {{ NAME }}/debian/changelog | sed -n '/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}' | cut -d '-' -f1)+git$(date +'%Y%m%d%H%M')~{{ RELEASE }}";
+export DEBFULLNAME="Lugito"
+export DEBEMAIL="info@lubuntu.me"
+tar cvf {{ NAME }}_$VERSION.orig.tar upstream;
+gzip {{ NAME }}_$VERSION.orig.tar;
+(cd {{ NAME }}; dch --distribution {{ RELEASE }} --package "{{ NAME }}" --newversion "$VERSION-0ubuntu1~ppa1" "CI upload."; debuild -S -d -sa -k959BC9B671870639A1AC6E2F7FE7CC578F23E4CA; dput {{ UPLOAD_TARGET }} ../{{ NAME }}_$VERSION-0ubuntu1~ppa1_source.changes)
+sleep 2m;
+git clone https://phab.lubuntu.me/source/ci-tooling.git tooling;
+./tooling/ci/lp_check.py -p {{ NAME }} -v $VERSION-0ubuntu1~ppa1 -t lubuntu-ci -r unstable-ci-proposed;
       </command>
     </hudson.tasks.Shell>
   </builders>
