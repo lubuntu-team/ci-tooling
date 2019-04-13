@@ -224,10 +224,12 @@ class Generator:
 
                     view.add_job(job_name)
 
+        # From here on out, the same template is used
+        package_config = self.load_config("release-mgmt")
+
         # Generate a management job for every release, stable and unstable
         for release in total_rel:
             for jobtype in ["unstable", "stable"]:
-                package_config = self.load_config("release-mgmt")
                 job_name = "mgmt_build_" + release + "_" + jobtype
                 if job_name in jobs:
                     job = server.get_job(job_name)
@@ -240,6 +242,16 @@ class Generator:
                 # Huge Problem anyway
                 view = server.views["mgmt"]
                 view.add_job(job_name)
+
+        # Generate one last merger management job
+        if "merger" in jobs:
+            job = server.get_job("merger")
+            job.update_config(package_config)
+        else:
+            job = server.create_job("merger", str(package_config))
+
+        view = server.views["mgmt"]
+        view.add_job(job_name)
 
 
 if __name__ == "__main__":
