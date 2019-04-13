@@ -48,7 +48,7 @@ export UPSTREAM_VERSION="$(head -1 {{ NAME }}/debian/changelog | sed -n '/(/,/)/
 export VERSION="$UPSTREAM_VERSION+git$(date +'%Y%m%d%H%M')~{{ RELEASE }}";
 export DEBFULLNAME="Lugito"
 export DEBEMAIL="info@lubuntu.me"
-for FILENAME in {{ NAME }}_$UPSTREAM_VERSION.orig*; do mv $FILENAME $(echo $FILENAME | sed "s/$UPSTREAM_VERSION/$VERSION/"); done
+bash -c 'for FILENAME in {{ NAME }}_$UPSTREAM_VERSION.orig*; do mv $FILENAME $(echo $FILENAME | sed "s/$UPSTREAM_VERSION/$VERSION/"); done'
 (cd {{ NAME }}; uscan --download-current-version; dch --distribution {{ RELEASE }} --package "{{ NAME }}" --newversion "$VERSION-0ubuntu1~ppa1" "CI upload."; debuild -S -d -sa -k959BC9B671870639A1AC6E2F7FE7CC578F23E4CA; dput {{ UPLOAD_TARGET }} ../{{ NAME }}_$VERSION-0ubuntu1~ppa1_source.changes)
 sleep 2m;
 git clone https://phab.lubuntu.me/source/ci-tooling.git tooling;
