@@ -110,7 +110,7 @@ class Generator:
 
         return server
 
-    def load_config(self, job_type, data):
+    def load_config(self, job_type, data=None):
         """Return a template that is a result of loading the data
 
         This makes it easier to standardize several types of jobs
@@ -124,11 +124,12 @@ class Generator:
                 template += text
             template = Template(template)
 
-        url = data["packaging_url"]
-        u_branch = data["packaging_branch_unstable"]
-        s_branch = data["packaging_branch_stable"]
-        u_upload_target = data["upload_target_unstable"]
-        s_upload_target = data["upload_target_stable"]
+        if data:
+            url = data["packaging_url"]
+            u_branch = data["packaging_branch_unstable"]
+            s_branch = data["packaging_branch_stable"]
+            u_upload_target = data["upload_target_unstable"]
+            s_upload_target = data["upload_target_stable"]
 
         if job_type.startswith("package"):
             upstream = data["upstream_url"]
