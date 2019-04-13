@@ -181,6 +181,8 @@ class Generator:
         for job_name, job_instance in server.get_jobs():
             jobs.append(job_name)
 
+        total_rel = set()
+
         for package in metadata:
             # Create the merger jobs first
             job_name = "merger_" + package["name"]
@@ -196,8 +198,6 @@ class Generator:
                 else:
                     view = server.views.create("merger")
                 view.add_job(job_name)
-
-            total_rel = set()
 
             for release in package["releases"]:
                 # Add the release to the total release set, which is used to
@@ -224,22 +224,22 @@ class Generator:
 
                     view.add_job(job_name)
 
-            # Generate a management job for every release, stable and unstable
-            for release in total_rel:
-                for jobtype in ["unstable", "stable"]:
-                    package_config = self.load_config("release-mgmt")
-                    jobname = "mgmt_build_" + release + "_" + jobtype
-                    if job_name in jobs:
-                        job = server.get_job(job_name)
-                        job.update_config(package_config)
-                    else:
-                        job = server.create_job(job_name, str(package_config))
+        # Generate a management job for every release, stable and unstable
+        for release in total_rel:
+            for jobtype in ["unstable", "stable"]:
+                package_config = self.load_config("release-mgmt")
+                jobname = "mgmt_build_" + release + "_" + jobtype
+                if job_name in jobs:
+                    job = server.get_job(job_name)
+                    job.update_config(package_config)
+                else:
+                    job = server.create_job(job_name, str(package_config))
 
-                    # The mgmt view should be the first view created, we don't
-                    # have to create it if it doesn't exist because that's a
-                    # Huge Problem anyway
-                    view = server.views["mgmt"]
-                    view.add_job(jobname)
+                # The mgmt view should be the first view created, we don't
+                # have to create it if it doesn't exist because that's a
+                # Huge Problem anyway
+                view = server.views["mgmt"]
+                view.add_job(jobname)
 
 
 if __name__ == "__main__":
