@@ -132,7 +132,6 @@ class Generator:
 
         if job_type.startswith("package"):
             upstream = data["upstream_url"]
-            upload_target = data["upload_target"]
             package_config = template.render(PACKAGING_URL=url,
                                              PACKAGING_BRANCH_U=u_branch,
                                              PACKAGING_BRANCH_S=s_branch,
