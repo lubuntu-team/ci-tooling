@@ -147,6 +147,8 @@ class Generator:
                                              PACKAGING_BRANCH_S=s_branch,
                                              NAME=data["name"],
                                              DEFAULT_BRANCH=default_branch)
+        elif job_type == "release-mgmt":
+            package_config = template.render()
         else:
             raise ValueError("Invalid job type")
 
@@ -194,7 +196,13 @@ class Generator:
                     view = server.views.create("merger")
                 view.add_job(job_name)
 
+            total_rel = set()
+
             for release in package["releases"]:
+                # Add the release to the total release set, which is used to
+                # generate the management jobs
+                total_rel.add(release)
+
                 # Load the config given the current data
                 package["release"] = release
                 for jobtype in ["unstable", "stable"]:
@@ -206,16 +214,31 @@ class Generator:
                         job.update_config(package_config)
                     else:
                         job = server.create_job(job_name, str(package_config))
-                        # With an existing job we can assume it's already in an
-                        # appropriate view. With new jobs, we should see if the
-                        # view exists, and if it doesn't, create it
-                        viewname = release + " " + jobtype
-                        if viewname in server.views:
-                            view = server.views[viewname]
-                        else:
-                            view = server.views.create(viewname)
 
-                        view.add_job(job_name)
+                    viewname = release + " " + jobtype
+                    if viewname in server.views:
+                        view = server.views[viewname]
+                    else:
+                        view = server.views.create(viewname)
+
+                    view.add_job(job_name)
+
+            # Generate a management job for every release, stable and unstable
+            for release in total_rel:
+                for jobtype in ["unstable", "stable"]:
+                    package_config = self.load_config("release-mgmt")
+                    jobname = "mgmt_build_" + release + "_" + jobtype
+                    if job_name in jobs:
+                        job = server.get_job(job_name)
+                        job.update_config(package_config)
+                    else:
+                        job = server.create_job(job_name, str(package_config))
+
+                    # The mgmt view should be the first view created, we don't
+                    # have to create it if it doesn't exist because that's a
+                    # Huge Problem anyway
+                    view = server.views["mgmt"]
+                    view.addjob(jobname)
 
 
 if __name__ == "__main__":

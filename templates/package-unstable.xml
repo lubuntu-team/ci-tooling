@@ -31,7 +31,7 @@
   <triggers>
     <jenkins.triggers.ReverseBuildTrigger>
       <spec></spec>
-      <upstreamProjects>merger_{{ NAME }}</upstreamProjects>
+      <upstreamProjects>merger_{{ NAME }}, mgmt_build_{{ RELEASE }}_unstable</upstreamProjects>
       <threshold>
         <name>SUCCESS</name>
         <ordinal>0</ordinal>
