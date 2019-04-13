@@ -251,7 +251,7 @@ class Generator:
             job = server.create_job("merger", str(package_config))
 
         view = server.views["mgmt"]
-        view.add_job(job_name)
+        view.add_job("merger")
 
 
 if __name__ == "__main__":
