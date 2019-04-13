@@ -239,7 +239,7 @@ class Generator:
                 # have to create it if it doesn't exist because that's a
                 # Huge Problem anyway
                 view = server.views["mgmt"]
-                view.add_job(jobname)
+                view.add_job(job_name)
 
 
 if __name__ == "__main__":
