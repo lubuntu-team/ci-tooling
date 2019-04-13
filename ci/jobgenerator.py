@@ -228,7 +228,7 @@ class Generator:
         for release in total_rel:
             for jobtype in ["unstable", "stable"]:
                 package_config = self.load_config("release-mgmt")
-                jobname = "mgmt_build_" + release + "_" + jobtype
+                job_name = "mgmt_build_" + release + "_" + jobtype
                 if job_name in jobs:
                     job = server.get_job(job_name)
                     job.update_config(package_config)
