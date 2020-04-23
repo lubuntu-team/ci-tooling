@@ -146,11 +146,20 @@ class Generator:
                                              UPLOAD_TARGET_S=s_upload_target)
         elif job_type == "merger":
             default_branch = data["default_branch"]
-            package_config = template.render(PACKAGING_URL=url,
-                                             PACKAGING_BRANCH_U=u_branch,
-                                             PACKAGING_BRANCH_S=s_branch,
-                                             NAME=data["name"],
-                                             DEFAULT_BRANCH=default_branch)
+            # HACKY HACKY HACKY
+            # If we can't push to it, the merger job is useless
+            if not "phab.lubuntu.me" in url:
+                with open(path.join("templates", "useless-merger.xml")) as f:
+                    package_config = ""
+                    for text in f.readlines():
+                        package_config += text
+                    print(package_config)
+            else:
+                package_config = template.render(PACKAGING_URL=url,
+                                                 PACKAGING_BRANCH_U=u_branch,
+                                                 PACKAGING_BRANCH_S=s_branch,
+                                                 NAME=data["name"],
+                                                 DEFAULT_BRANCH=default_branch)
         elif job_type == "release-mgmt":
             package_config = template.render()
         else:
