@@ -16,14 +16,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import git
-import jenkinsapi
-from os import getenv
+from os import getenv, path
 from yaml import CLoader
 from yaml import load as yaml_load
 from jinja2 import Template
 from shutil import rmtree
 from tempfile import mkdtemp
 from jenkinsapi.jenkins import Jenkins
+
 
 class Generator:
     def clone_metadata(self):
@@ -43,8 +43,7 @@ class Generator:
         # because otherwise we have no metadata to actually pull from
         metadata_url = getenv("METADATA_URL")
         metadata_repo_name = getenv("METADATA_REPO_NAME")
-        if not metadata_url or metadata_url == "" or not metadata_repo_name \
-            or metadata_repo_name == "":
+        if not metadata_url or not metadata_repo_name:
             raise ValueError("METADATA_URL and METADATA_REPO_NAME must be set")
 
         # Create a temporary directory in the most secure manner possible and
@@ -54,8 +53,10 @@ class Generator:
             git.Git(metadata_loc).clone(metadata_url)
 
             # Load ci.conf and parse it
-            with open(metadata_loc + "/" + metadata_repo_name + "/ci.conf") \
-                as metadata_conf_file:
+            config_file = path.join(metadata_loc,
+                                    metadata_repo_name,
+                                    "ci.conf")
+            with open(config_file) as metadata_conf_file:
                 metadata_conf = yaml_load(metadata_conf_file, Loader=CLoader)
         finally:
             rmtree(metadata_loc)
@@ -80,12 +81,12 @@ class Generator:
         for package in metadata_conf["repositories"]:
             # Load defaults in if they're not there, ignore the optional ones
             for mkey in metadata_req_keys:
-                if not mkey in package and mkey in metadata_conf["default"]:
+                if mkey not in package and mkey in metadata_conf["default"]:
                     package[mkey] = metadata_conf["default"][mkey]
             # Don't proceed if any of the keys in the config are invalid
             for mkey in package:
-                if not mkey in metadata_req_keys and not mkey in \
-                    metadata_opt_keys:
+                if mkey not in metadata_req_keys and mkey not in \
+                   metadata_opt_keys:
                     raise ValueError("Invalid key present:", mkey)
 
         return metadata_conf["repositories"]
@@ -102,7 +103,7 @@ class Generator:
         api_user = getenv("API_USER")
         api_key = getenv("API_KEY")
         for envvar in [api_site, api_user, api_key]:
-            if not envvar or envvar == "":
+            if not envvar:
                 raise ValueError("API_SITE, API_USER, and API_KEY must be",
                                  "defined")
         # Authenticate to the server
@@ -118,7 +119,9 @@ class Generator:
 
         # The template name should always correspond with the job type
         # Regardless of the job type, there should always be a template
-        with open("templates/" + job_type + ".xml") as templatef:
+        template_path = path.join("templates",
+                                  job_type + ".xml")
+        with open(template_path) as templatef:
             template = ""
             for text in templatef.readlines():
                 template += text
@@ -176,9 +179,8 @@ class Generator:
         # just create it
         metadata = self.parse_metadata()
         jobs = []
-        releases = set()
 
-        for job_name, job_instance in server.get_jobs():
+        for job_name in server.get_jobs():
             jobs.append(job_name)
 
         total_rel = set()
@@ -209,7 +211,7 @@ class Generator:
                 for jobtype in ["unstable", "stable"]:
                     job_name = release + "_" + jobtype + "_" + package["name"]
                     package_config = self.load_config("package-" + jobtype,
-                        package)
+                                                      package)
                     if job_name in jobs:
                         job = server.get_job(job_name)
                         job.update_config(package_config)
