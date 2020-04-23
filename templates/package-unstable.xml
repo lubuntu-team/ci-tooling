@@ -62,7 +62,7 @@ export DEBFULLNAME="Lugito"
 export DEBEMAIL="info@lubuntu.me"
 tar cvf {{ NAME }}_$VERSION.orig.tar upstream;
 gzip {{ NAME }}_$VERSION.orig.tar;
-(cd {{ NAME }}; dch --distribution {{ RELEASE }} --package "{{ NAME }}" --newversion "$VERSION-0ubuntu1~ppa1" "CI upload."; debuild -S -d -sa -k959BC9B671870639A1AC6E2F7FE7CC578F23E4CA; dput {{ UPLOAD_TARGET_U }} ../{{ NAME }}_$VERSION-0ubuntu1~ppa1_source.changes)
+(cd {{ NAME }}; dch --distribution {{ RELEASE }} --package "{{ NAME }}" --newversion "$VERSION-0ubuntu1~ppa1" "CI upload."; debuild -S -d -sa -k06DA7DDBBF3117FFE3FB849E4F81E626A09EB338; dput {{ UPLOAD_TARGET_U }} ../{{ NAME }}_$VERSION-0ubuntu1~ppa1_source.changes)
 sleep 5m;
 git clone https://phab.lubuntu.me/source/ci-tooling.git tooling;
 ./tooling/ci/lp_check.py -p {{ NAME }} -v $VERSION-0ubuntu1~ppa1 -t lubuntu-ci -r unstable-ci-proposed;
