@@ -56,10 +56,10 @@
       <command>
 cd {{ NAME }}
 git checkout {{ DEFAULT_BRANCH }}
-git branch -a | egrep "remotes/origin/{{ PACKAGING_BRANCH_S }}" && git checkout {{ PACKAGING_BRANCH_S }} || git checkout -b {{ PACKAGING_BRANCH_S }}
+git branch -a | egrep "remotes/origin/{{ PACKAGING_BRANCH_S }}" &amp;&amp; git checkout {{ PACKAGING_BRANCH_S }} || git checkout -b {{ PACKAGING_BRANCH_S }}
 git merge --ff-only {{ DEFAULT_BRANCH }}
 git push --set-upstream origin {{ PACKAGING_BRANCH_S }}
-git branch -a | egrep "remotes/origin/{{ PACKAGING_BRANCH_U }}" && git checkout {{ PACKAGING_BRANCH_U }} || git checkout -b {{ PACKAGING_BRANCH_U }}
+git branch -a | egrep "remotes/origin/{{ PACKAGING_BRANCH_U }}" &amp;&amp; git checkout {{ PACKAGING_BRANCH_U }} || git checkout -b {{ PACKAGING_BRANCH_U }}
 git merge --ff-only {{ PACKAGING_BRANCH_S }}
 git push --set-upstream origin {{ PACKAGING_BRANCH_U }}
       </command>
