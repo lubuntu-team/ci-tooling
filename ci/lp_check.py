@@ -16,7 +16,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
-import launchpadlib
 from time import sleep
 from launchpadlib.launchpad import Launchpad
 
@@ -49,9 +48,13 @@ class LaunchpadCheck:
         lp = self.login()
 
         # Grab the correct PPA object
+        ppa = None
         for ippa in lp.people[self.lp_person].ppas:
             if ippa.name == self.ppa_name:
                 ppa = ippa
+
+        if ppa is None:
+            raise ValueError("No PPA information available for package or package version.")
 
         # We're verifying every five minutes; never go to more than two hours
         # (60 minutes × 2 hours) ÷ 5 minutes = 24 max iterations
@@ -125,6 +128,7 @@ class LaunchpadCheck:
                 return True
         # If we've timed out, raise an error
         raise ValueError("Timed out, contact Launchpad admins")
+
 
 if __name__ == "__main__":
     lpcheck = LaunchpadCheck()

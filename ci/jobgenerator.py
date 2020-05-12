@@ -46,6 +46,7 @@ class Generator:
         if not metadata_url or not metadata_repo_name:
             raise ValueError("METADATA_URL and METADATA_REPO_NAME must be set")
 
+        metadata_loc = None
         # Create a temporary directory in the most secure manner possible and
         # clone the metadata, throwing the directory away when we're done
         try:
@@ -59,7 +60,10 @@ class Generator:
             with open(config_file) as metadata_conf_file:
                 metadata_conf = yaml_load(metadata_conf_file, Loader=CLoader)
         finally:
-            rmtree(metadata_loc)
+            if metadata_loc:
+                rmtree(metadata_loc)
+            else:
+                pass
 
         return metadata_conf
 
@@ -127,12 +131,14 @@ class Generator:
                 template += text
             template = Template(template)
 
-        if data:
+        if data is not None:
             url = data["packaging_url"]
             u_branch = data["packaging_branch_unstable"]
             s_branch = data["packaging_branch_stable"]
             u_upload_target = data["upload_target_unstable"]
             s_upload_target = data["upload_target_stable"]
+        else:
+            raise AttributeError("Data cannot be empty, cannot parse job data.")
 
         if job_type.startswith("package"):
             upstream = data["upstream_url"]

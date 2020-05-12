@@ -1,0 +1,5 @@
+launchpadlib
+jinja2
+jenkinsapi
+GitPython
+PyYAML
