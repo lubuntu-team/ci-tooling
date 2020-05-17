@@ -160,7 +160,6 @@ class Generator:
                     package_config = ""
                     for text in f.readlines():
                         package_config += text
-                    print(package_config)
             else:
                 package_config = template.render(PACKAGING_URL=url,
                                                  PACKAGING_BRANCH_U=u_branch,
@@ -205,7 +204,6 @@ class Generator:
 
         return jobs
 
-
     def create_jenkins_jobs(self):
         """Interface with Jenkins to create the jobs required
 
@@ -237,7 +235,7 @@ class Generator:
             # TODO: This is duplicate code, and it should be consolidated
             if job_name in jobs:
                 job = server.get_job(job_name)
-                print(job.update_config(package_config, full_response=True))
+                job.update_config(package_config)
             else:
                 job = server.create_job(job_name, str(package_config))
                 if "merger" in server.views:
@@ -259,7 +257,7 @@ class Generator:
                                                       package)
                     if job_name in jobs:
                         job = server.get_job(job_name)
-                        print(job.update_config(str(package_config), full_response=True))
+                        job.update_config(str(package_config))
                     else:
                         job = server.create_job(job_name, str(package_config))
 
@@ -280,7 +278,7 @@ class Generator:
                 job_name = "mgmt_build_" + release + "_" + jobtype
                 if job_name in jobs:
                     job = server.get_job(job_name)
-                    print(job.update_config(package_config, full_response=True))
+                    job.update_config(package_config)
                 else:
                     job = server.create_job(job_name, str(package_config))
 
@@ -293,7 +291,7 @@ class Generator:
         # Generate one last merger management job
         if "merger" in jobs:
             job = server.get_job("merger")
-            print(job.update_config(package_config, full_response=True))
+            job.update_config(package_config)
         else:
             job = server.create_job("merger", str(package_config))
 
