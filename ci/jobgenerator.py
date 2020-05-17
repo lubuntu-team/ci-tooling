@@ -70,6 +70,7 @@ class Generator:
 
         return metadata_conf
 
+    @timer.run("Parse the metadata")
     def parse_metadata(self):
         """Parse the data pulled from clone_metadata
 
@@ -98,6 +99,7 @@ class Generator:
 
         return metadata_conf["repositories"]
 
+    @timer.run("Auth to Jenkins")
     def auth_jenkins_server(self):
         """Authenticate to the Jenkins server
 
@@ -105,8 +107,6 @@ class Generator:
         set in Jenkins. These need to be private, so they are defined in the
         system-wide Jenkins credential storage.
         """
-        timer.start("Authenticate to the server")
-
         # Load the API values from the environment variables
         api_site = getenv("API_SITE")
         api_user = getenv("API_USER")
@@ -117,8 +117,6 @@ class Generator:
                                  "defined")
         # Authenticate to the server
         server = Jenkins(api_site, username=api_user, password=api_key)
-
-        timer.stop("Authenticate to the server")
 
         return server
 
@@ -179,6 +177,7 @@ class Generator:
 
         return package_config
 
+    @timer.run("Get existing jobs")
     def get_existing_jenkins_jobs(self, server):
         """This returns a tuple of all existing Jenkins jobs
 
@@ -233,6 +232,7 @@ class Generator:
         total_rel = set()
 
         for package in metadata:
+            timer.start("Merger job creation")
             # Create the merger jobs first
             job_name = "merger_" + package["name"]
             package_config = self.load_config("merger", package)
@@ -247,7 +247,9 @@ class Generator:
                 else:
                     view = server.views.create("merger")
                 view.add_job(job_name)
+            timer.stop("Merger job creation")
 
+            timer.start("Release job creation")
             for release in package["releases"]:
                 # Add the release to the total release set, which is used to
                 # generate the management jobs
@@ -272,7 +274,9 @@ class Generator:
                         view = server.views.create(viewname)
 
                     view.add_job(job_name)
+            timer.stop("Release job creation")
 
+        timer.start("Management job creation")
         # From here on out, the same template is used
         package_config = self.load_config("release-mgmt")
 
@@ -302,7 +306,10 @@ class Generator:
         view = server.views["mgmt"]
         view.add_job("merger")
 
+        timer.stop("Management job creation")
+
 
 if __name__ == "__main__":
     generator = Generator()
     print(generator.create_jenkins_jobs())
+    timer.display()

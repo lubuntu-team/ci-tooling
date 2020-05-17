@@ -17,6 +17,7 @@
 
 import time
 import tabulate
+import sys
 from tabulate import tabulate
 
 tabulate.PRESERVE_WHITESPACE = True
@@ -99,6 +100,24 @@ class TimerMetrics:
             # may indeed exist
             cur_time = t_val - self.data[name]["start_time"]
             self.data[name]["total_time"] += cur_time
+
+    def run(self, label):
+        """Wrap a function inside a timer
+
+        This allows for the usage of a decorator on a function which
+        automatically and easily starts and ends a timer
+        """
+        self.start(label)
+
+        def wrap(func):
+            def run_function(*args, **kwargs):
+                try:
+                    return func(*args, **kwargs)
+                finally:
+                    self.stop(label)
+            return run_function
+        return wrap
+
 
     def display(self):
         """Print a pretty(-ish) table with all of the data in it"""
