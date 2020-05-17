@@ -16,6 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import git
+import time
 from os import getenv, path
 from yaml import CLoader
 from yaml import load as yaml_load
@@ -173,6 +174,38 @@ class Generator:
 
         return package_config
 
+    def get_existing_jenkins_jobs(self, server):
+        """This returns a tuple of all existing Jenkins jobs
+
+        This is separated into a different function to make the code slightly
+        more efficient and clean. With generators being difficult to work with
+        and the need for several high-volume variables, this makes sense.
+        """
+
+        # Start a timer
+        t_start = time.perf_counter()
+        print("Getting list of existing Jenkins jobs...")
+
+        # Get the generator object with the jobs and create an empty list
+        s_jobs = server.get_jobs()
+        jobs = []
+
+        # The list from the server is in the following format:
+        # [('JOBNAME', <jenkinsapi.job.Job JOBNAME>)]
+        # We only want JOBNAME, so let's put that in jobs
+        for job_name in s_jobs:
+            jobs.append(job_name[0])
+
+        # Make sure jobs is a tuple
+        jobs = tuple(jobs)
+
+        # Stop the timer and log the time
+        t_end = time.perf_counter()
+        print(f"Finished in {t_end - t_start:0.4f} seconds.")
+
+        return jobs
+
+
     def create_jenkins_jobs(self):
         """Interface with Jenkins to create the jobs required
 
@@ -189,14 +222,11 @@ class Generator:
         # Authenticate to the Jenkins server
         server = self.auth_jenkins_server()
 
-        # Iterate through the packages we have in our metadata and update the
-        # job config for each if they match. If there's no existing job found,
-        # just create it
+        # Parse the metadata
         metadata = self.parse_metadata()
-        jobs = []
 
-        for job_name in server.get_jobs():
-            jobs.append(job_name)
+        # Get a list of existing jobs
+        jobs = self.get_existing_jenkins_jobs(server)
 
         total_rel = set()
 
@@ -229,7 +259,7 @@ class Generator:
                                                       package)
                     if job_name in jobs:
                         job = server.get_job(job_name)
-                        print(job.update_config(package_config, full_response=True))
+                        print(job.update_config(str(package_config), full_response=True))
                     else:
                         job = server.create_job(job_name, str(package_config))
 
