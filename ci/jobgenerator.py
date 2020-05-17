@@ -131,13 +131,13 @@ class Generator:
                 template += text
             template = Template(template)
 
-        if data is not None and job_type != "release-mgmt":
+        if data is not None:
             url = data["packaging_url"]
             u_branch = data["packaging_branch_unstable"]
             s_branch = data["packaging_branch_stable"]
             u_upload_target = data["upload_target_unstable"]
             s_upload_target = data["upload_target_stable"]
-        else:
+        elif job_type != "release-mgmt":
             raise AttributeError("Data cannot be empty, cannot parse job data.")
 
         if job_type.startswith("package"):
