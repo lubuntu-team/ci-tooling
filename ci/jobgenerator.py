@@ -186,9 +186,6 @@ class Generator:
         and the need for several high-volume variables, this makes sense.
         """
 
-        # Start a timer
-        timer.start("Getting existing Jenkins jobs")
-
         # Get the generator object with the jobs and create an empty list
         s_jobs = server.get_jobs()
         jobs = []
@@ -201,9 +198,6 @@ class Generator:
 
         # Make sure jobs is a tuple
         jobs = tuple(jobs)
-
-        # Stop the timer and log the time
-        timer.stop("Getting existing Jenkins jobs")
 
         return jobs
 
