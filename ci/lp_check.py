@@ -81,9 +81,11 @@ class LaunchpadCheck:
         # Getting the source is a prerequisite
         lp, ppa = self.verify_source_published(package, package_version)
 
-        # We're verifying every five minutes; never go to more than two hours
-        # (60 minutes × 2 hours) ÷ 5 minutes = 24 max iterations
-        for i in range(0, 24):
+        # We're verifying every five minutes; never go for more than six hours
+        # The reason this is so lengthy is to provide time for publisher
+        # maintenance on Sundays, which can take up to six hours
+        # (60 minutes × 6 hours) ÷ 5 minutes = 72 max iterations
+        for i in range(0, 72):
             print("Verifying if binaries are published,", (i*5), "minutes in.")
             need_sleep = False
             try:
