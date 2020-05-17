@@ -131,7 +131,7 @@ class Generator:
                 template += text
             template = Template(template)
 
-        if data is not None:
+        if data is not None and job_type != "release-mgmt":
             url = data["packaging_url"]
             u_branch = data["packaging_branch_unstable"]
             s_branch = data["packaging_branch_stable"]
