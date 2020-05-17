@@ -207,7 +207,7 @@ class Generator:
             # TODO: This is duplicate code, and it should be consolidated
             if job_name in jobs:
                 job = server.get_job(job_name)
-                job.update_config(package_config)
+                print(job.update_config(package_config, full_response=True))
             else:
                 job = server.create_job(job_name, str(package_config))
                 if "merger" in server.views:
@@ -229,7 +229,7 @@ class Generator:
                                                       package)
                     if job_name in jobs:
                         job = server.get_job(job_name)
-                        job.update_config(package_config)
+                        print(job.update_config(package_config, full_response=True))
                     else:
                         job = server.create_job(job_name, str(package_config))
 
@@ -250,7 +250,7 @@ class Generator:
                 job_name = "mgmt_build_" + release + "_" + jobtype
                 if job_name in jobs:
                     job = server.get_job(job_name)
-                    job.update_config(package_config)
+                    print(job.update_config(package_config, full_response=True))
                 else:
                     job = server.create_job(job_name, str(package_config))
 
@@ -263,7 +263,7 @@ class Generator:
         # Generate one last merger management job
         if "merger" in jobs:
             job = server.get_job("merger")
-            job.update_config(package_config)
+            print(job.update_config(package_config, full_response=True))
         else:
             job = server.create_job("merger", str(package_config))
 
