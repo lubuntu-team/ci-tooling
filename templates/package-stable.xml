@@ -68,6 +68,14 @@ git clone https://phab.lubuntu.me/source/ci-tooling.git tooling;
 ./tooling/ci/lp_check.py -p {{ NAME }} -v $VERSION-0ubuntu1~ppa1 -t lubuntu-ci -r stable-ci-proposed;
       </command>
     </hudson.tasks.Shell>
+    <hudson.tasks.Shell>
+      <command>
+export VERSION=&quot;$(head -1 {{ NAME }}/debian/changelog | sed -n &apos;/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}&apos; | cut -d &apos;-&apos; -f1)&quot;;
+pull-ppa-debs --ppa=ppa:lubuntu-ci/stable-ci-proposed {{ NAME }} $VERSION-0ubuntu1~ppa1
+lintian -EvIL +pedantic *.dsc *.deb
+      </command>
+      <unstableReturn>1</unstableReturn>
+    </hudson.tasks.Shell>
   </builders>
   <publishers>
     <com.chikli.hudson.plugin.naginator.NaginatorPublisher plugin="naginator@1.18">
