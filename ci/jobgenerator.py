@@ -16,7 +16,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import git
-import time
 from os import getenv, path
 from yaml import CLoader
 from yaml import load as yaml_load
@@ -24,6 +23,9 @@ from jinja2 import Template
 from shutil import rmtree
 from tempfile import mkdtemp
 from jenkinsapi.jenkins import Jenkins
+from timer_metrics import TimerMetrics
+
+timer = TimerMetrics()
 
 
 class Generator:
@@ -103,6 +105,8 @@ class Generator:
         set in Jenkins. These need to be private, so they are defined in the
         system-wide Jenkins credential storage.
         """
+        timer.start("Authenticate to the server")
+
         # Load the API values from the environment variables
         api_site = getenv("API_SITE")
         api_user = getenv("API_USER")
@@ -113,6 +117,8 @@ class Generator:
                                  "defined")
         # Authenticate to the server
         server = Jenkins(api_site, username=api_user, password=api_key)
+
+        timer.stop("Authenticate to the server")
 
         return server
 
@@ -182,8 +188,7 @@ class Generator:
         """
 
         # Start a timer
-        t_start = time.perf_counter()
-        print("Getting list of existing Jenkins jobs...")
+        timer.start("Getting existing Jenkins jobs")
 
         # Get the generator object with the jobs and create an empty list
         s_jobs = server.get_jobs()
@@ -199,8 +204,7 @@ class Generator:
         jobs = tuple(jobs)
 
         # Stop the timer and log the time
-        t_end = time.perf_counter()
-        print(f"Finished in {t_end - t_start:0.4f} seconds.")
+        timer.stop("Getting existing Jenkins jobs")
 
         return jobs
 
