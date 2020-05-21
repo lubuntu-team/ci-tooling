@@ -16,8 +16,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import time
-import tabulate
-import sys
 from tabulate import tabulate
 
 tabulate.PRESERVE_WHITESPACE = True
@@ -68,7 +66,7 @@ class TimerMetrics:
             self.data[name]["total_time"] = 0.0
 
         # If it is there, only act if it's running
-        elif self.data[name]["running"] == False:
+        elif self.data[name]["running"] is False:
             # Now we're running
             self.data[name]["running"] = True
 
@@ -92,7 +90,7 @@ class TimerMetrics:
             assert ValueError("Timer " + name + " not found")
 
         # If the timer is running, update total_time and stop it
-        if self.data[name]["running"] == True:
+        if self.data[name]["running"] is True:
             # Stop the timer
             self.data[name]["running"] = False
 
@@ -118,7 +116,6 @@ class TimerMetrics:
             return run_function
         return wrap
 
-
     def display(self):
         """Print a pretty(-ish) table with all of the data in it"""
 
@@ -133,7 +130,10 @@ class TimerMetrics:
 
         # Sort the data into descending order and then put them into two lists
         # Keys have one list and values have another
-        s_pretty = {k: v for k, v in sorted(pretty.items(), key=lambda item: item[1], reverse=True)}
+        s_pretty = {k: v for k,
+                    v in sorted(pretty.items(),
+                                key=lambda item: item[1],
+                                reverse=True)}
         table["Timer"] = list(s_pretty.keys())
         table["Seconds"] = list(s_pretty.values())
 
@@ -149,7 +149,7 @@ class TimerMetrics:
         # Get percentages in its own column
         table["% of total"] = []
         for i in range(len(table["Seconds"])):
-            percent = ( table["Seconds"][i] / total_secs ) * 100.0
+            percent = (table["Seconds"][i] / total_secs) * 100.0
             # Round to the nearest hundredth and add a %
             table["% of total"].append(str(round(percent, 2)) + "%")
 
