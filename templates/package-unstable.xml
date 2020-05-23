@@ -72,7 +72,7 @@ git clone https://phab.lubuntu.me/source/ci-tooling.git tooling;
       <command>
 export VERSION=&quot;$(head -1 {{ NAME }}/debian/changelog | sed -n &apos;/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}&apos; | cut -d &apos;-&apos; -f1)&quot;;
 pull-ppa-debs --ppa=ppa:lubuntu-ci/unstable-ci-proposed {{ NAME }} $VERSION-0ubuntu1~ppa1;
-lintian -EvIL +pedantic *.dsc *.deb;
+lintian --fail-on=warning -EvIL +pedantic *.dsc *.deb;
       </command>
       <unstableReturn>1</unstableReturn>
     </hudson.tasks.Shell>
