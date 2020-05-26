@@ -80,6 +80,52 @@ git push --set-upstream origin {{ PACKAGING_BRANCH_U }}
       <externalDelete></externalDelete>
       <disableDeferredWipeout>false</disableDeferredWipeout>
     </hudson.plugins.ws__cleanup.WsCleanup>
+    <org.jenkins__ci.plugins.flexible__publish.FlexiblePublisher plugin="flexible-publish@0.15.2">
+      <publishers>
+        <org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+          <condition class="org.jenkins_ci.plugins.run_condition.core.StatusCondition" plugin="run-condition@1.3">
+            <worstResult>
+              <name>ABORTED</name>
+              <ordinal>4</ordinal>
+              <color>ABORTED</color>
+              <completeBuild>false</completeBuild>
+            </worstResult>
+            <bestResult>
+              <name>SUCCESS</name>
+              <ordinal>0</ordinal>
+              <color>BLUE</color>
+              <completeBuild>true</completeBuild>
+            </bestResult>
+          </condition>
+          <publisherList>
+            <jenkins.plugins.http__request.HttpRequest plugin="http_request@1.8.26">
+              <url>http://lugito.lubuntu.me:5000/jenkinsnag</url>
+              <ignoreSslErrors>false</ignoreSslErrors>
+              <httpMode>POST</httpMode>
+              <httpProxy></httpProxy>
+              <passBuildParameters>false</passBuildParameters>
+              <validResponseCodes>100:399</validResponseCodes>
+              <validResponseContent></validResponseContent>
+              <acceptType>NOT_SET</acceptType>
+              <contentType>NOT_SET</contentType>
+              <outputFile></outputFile>
+              <timeout>0</timeout>
+              <consoleLogResponseBody>false</consoleLogResponseBody>
+              <quiet>false</quiet>
+              <authentication></authentication>
+              <requestBody>{&quot;PROJECT&quot;: &quot;{{ NAME }}&quot;}</requestBody>
+              <uploadFile></uploadFile>
+              <multipartName></multipartName>
+              <wrapAsMultipart>false</wrapAsMultipart>
+              <useSystemProperties>false</useSystemProperties>
+              <customHeaders class="empty-list"/>
+            </jenkins.plugins.http__request.HttpRequest>
+          </publisherList>
+          <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.3"/>
+          <executionStrategy class="org.jenkins_ci.plugins.flexible_publish.strategy.FailAtEndExecutionStrategy"/>
+        </org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+      </publishers>
+    </org.jenkins__ci.plugins.flexible__publish.FlexiblePublisher>
   </publishers>
   <buildWrappers/>
 </project>
