@@ -113,7 +113,7 @@ git push --set-upstream origin {{ PACKAGING_BRANCH_U }}
               <consoleLogResponseBody>false</consoleLogResponseBody>
               <quiet>false</quiet>
               <authentication></authentication>
-              <requestBody>{&quot;PROJECT&quot;: &quot;{{ NAME }}&quot;}</requestBody>
+              <requestBody>{&quot;PROJECT&quot;: &quot;merger_{{ NAME }}&quot;}</requestBody>
               <uploadFile></uploadFile>
               <multipartName></multipartName>
               <wrapAsMultipart>false</wrapAsMultipart>

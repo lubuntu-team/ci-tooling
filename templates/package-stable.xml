@@ -133,7 +133,7 @@ lintian --fail-on=error,warning -EvIL +pedantic *.dsc *.deb;
               <consoleLogResponseBody>false</consoleLogResponseBody>
               <quiet>false</quiet>
               <authentication></authentication>
-              <requestBody>{&quot;PROJECT&quot;: &quot;{{ NAME }}&quot;}</requestBody>
+              <requestBody>{&quot;PROJECT&quot;: &quot;{{ RELEASE }}_stable_{{ NAME }}&quot;}</requestBody>
               <uploadFile></uploadFile>
               <multipartName></multipartName>
               <wrapAsMultipart>false</wrapAsMultipart>
