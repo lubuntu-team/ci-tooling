@@ -72,7 +72,7 @@ git clone https://phab.lubuntu.me/source/ci-tooling.git tooling;
       <command>
 export VERSION=&quot;$(head -1 {{ NAME }}/debian/changelog | sed -n &apos;/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}&apos; | cut -d &apos;-&apos; -f1)&quot;;
 pull-ppa-debs --ppa=ppa:lubuntu-ci/unstable-ci-proposed {{ NAME }} $VERSION-0ubuntu1~ppa1;
-lintian --fail-on=error,warning --suppress-tags orig-tarball-missing-upstream-signature -EvIL +pedantic *.dsc *.deb;
+lintian --fail-on=error,warning --suppress-tags orig-tarball-missing-upstream-signature,package-has-long-file-name -EvIL +pedantic *.dsc *.deb;
       </command>
       <unstableReturn>2</unstableReturn>
     </hudson.tasks.Shell>
