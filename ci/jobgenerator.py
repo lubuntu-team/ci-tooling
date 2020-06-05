@@ -99,7 +99,7 @@ class Generator:
         mdata_req_keys = ["name", "packaging_url", "packaging_branch",
                           "upload_target", "releases", "default_branch",
                           "type", "upstream_url", "upstream_branch"]
-        mdata_opt_keys = ["upstream_url", "upstream_branch"]
+        mdata_opt_keys = ["upstream_url", "upstream_branch", "cascade"]
         mdata_sub_keys = {"NAME": "name"}
 
         for config in mdata_conf["active_configs"]:
