@@ -29,6 +29,7 @@ timer = TimerMetrics()
 
 
 class Generator:
+    @timer.run("Clone the metadata")
     def clone_metadata(self):
         """Clone the metadata repository using the values set in the env vars
 
@@ -149,6 +150,7 @@ class Generator:
 
         return server
 
+    @timer.run("Load configuration files")
     def load_config(self, job_type, data=None):
         """Return a template that is a result of loading the data
 
@@ -230,6 +232,7 @@ class Generator:
             if not name in server.views[view]:
                 view.add_job(name)
 
+    @timer.run("Master function loop")
     def create_jenkins_jobs(self):
         """Interface with Jenkins to create the jobs required
 

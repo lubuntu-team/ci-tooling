@@ -107,12 +107,24 @@ class TimerMetrics:
         """
         self.start(label)
 
+        # Pause all other timers
+        paused = []
+        for timer in self.data:
+            if not timer == label and self.data[timer]["running"]:
+                self.stop(timer)
+                paused.append(timer)
+
         def wrap(func):
             def run_function(*args, **kwargs):
                 try:
                     return func(*args, **kwargs)
                 finally:
                     self.stop(label)
+ 
+                    # Unpause other timers
+                    for timer in paused:
+                        self.start(timer)
+
             return run_function
         return wrap
 
