@@ -227,8 +227,8 @@ class Generator:
                 view = server.views.create(view)
 
             # Only add to the view if it's not already in there
-            if not job_name in server.views[view]:
-                view.add_job(job_name)
+            if not name in server.views[view]:
+                view.add_job(name)
 
     def create_jenkins_jobs(self):
         """Interface with Jenkins to create the jobs required
@@ -253,22 +253,24 @@ class Generator:
 
         total_rel = set()
 
-        configs = {"merger": [], "stable": [], "unstable": []}
+        configs = {"merger": {}, "stable": {}, "unstable": {}}
         # Sort config names into different categories
         for config in metadata["active_configs"]:
             config_name = config
             config = metadata["active_configs"][config]
             for config_type in configs:
                 if config["default"]["type"] == config_type:
-                    configs[config_type].append(metadata["active_configs"][config_name].copy())
+                    configs[config_type][config_name] = metadata["active_configs"][config_name].copy()
 
 
         # Create the merger jobs first
         for config in configs["merger"]:
+            config_name = config
+            config = configs["merger"][config]
             parent = metadata["active_configs"][config["default"]["parent"]]
             for package in parent["repositories"]:
                 package["cascade"] = config["default"]["cascade"]
-                name = "merger_" + package["name"]
+                name = config_name + "_" + package["name"]
                 p_config = self.load_config("merger", package)
                 self.create_jenkins_job(server, p_config, name, "merger")
 
@@ -276,6 +278,8 @@ class Generator:
         for job_type in ["stable", "unstable"]:
             # This is the actual loop
             for config in configs[job_type]:
+                config_name = config
+                config = configs[job_type][config]
                 # Loop on the individual packages
                 for package in config["repositories"]:
                     # Loop on each release
@@ -288,7 +292,7 @@ class Generator:
                         # Get the package config from the template
                         p_config = self.load_config("package-" + job_type,
                                                     package)
-                        name = "%s_%s_%s" % (release, job_type,
+                        name = "%s_%s_%s" % (release, config_name,
                                              package["name"])
                         view_name = release + " " + job_type
 
