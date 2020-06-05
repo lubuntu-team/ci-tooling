@@ -272,7 +272,8 @@ class Generator:
             config = configs["merger"][config]
             parent = metadata["active_configs"][config["default"]["parent"]]
             for package in parent["repositories"]:
-                package["cascade"] = config["default"]["cascade"]
+                if "cascade" not in package:
+                    package["cascade"] = config["default"]["cascade"]
                 name = config_name + "_" + package["name"]
                 p_config = self.load_config("merger", package)
                 self.create_jenkins_job(server, p_config, name, "merger")
