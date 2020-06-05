@@ -201,8 +201,7 @@ class Generator:
 
             package_config = template.render(PACKAGING_URL=url,
                                              MERGE_COMMANDS=cascade,
-                                             NAME=data["name"],
-                                             DEFAULT_BRANCH=cascading[0])
+                                             NAME=data["name"])
         elif job_type == "release-mgmt":
             package_config = template.render()
         else:
