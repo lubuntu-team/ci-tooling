@@ -62,6 +62,22 @@ class Generator:
                                     "ci.conf")
             with open(config_file) as metadata_conf_file:
                 metadata_conf = yaml_load(metadata_conf_file, Loader=CLoader)
+
+            # Load all of the active config files and replace the given patch
+            # with the data from those files
+            active_configs = {}
+            for conf in metadata_conf["active_configs"]:
+                conf_path = path.join(metadata_loc, metadata_repo_name,
+                                      conf)
+
+                # Replace the string with a dict having all the data
+                with open(conf_path) as conf_file:
+                    conf_loaded = yaml_load(conf_file, Loader=CLoader)
+                    active_configs[conf.replace(".conf", "")] = conf_loaded
+
+            # Since metadata_conf["active_configs"] is a list, we have to use
+            # a separate dict to store the new data until here
+            metadata_conf["active_configs"] = active_configs
         finally:
             if metadata_loc:
                 rmtree(metadata_loc)
@@ -78,26 +94,38 @@ class Generator:
         shorter and cleaner configuration files.
         """
 
-        metadata_conf = self.clone_metadata()
-        metadata_req_keys = ["name", "packaging_url",
-                             "packaging_branch_unstable",
-                             "packaging_branch_stable",
-                             "upload_target_unstable", "upload_target_stable",
-                             "releases", "default_branch"]
-        metadata_opt_keys = ["upstream_url", "upstream_branch"]
+        mdata_conf = self.clone_metadata()
+        mdata_req_keys = ["name", "packaging_url", "packaging_branch",
+                          "upload_target", "releases", "default_branch",
+                          "type", "upstream_url", "upstream_branch"]
+        mdata_opt_keys = ["upstream_url", "upstream_branch"]
+        mdata_sub_keys = {"NAME": "name"}
 
-        for package in metadata_conf["repositories"]:
-            # Load defaults in if they're not there, ignore the optional ones
-            for mkey in metadata_req_keys:
-                if mkey not in package and mkey in metadata_conf["default"]:
-                    package[mkey] = metadata_conf["default"][mkey]
-            # Don't proceed if any of the keys in the config are invalid
-            for mkey in package:
-                if mkey not in metadata_req_keys and mkey not in \
-                   metadata_opt_keys:
-                    raise ValueError("Invalid key present:", mkey)
+        for config in mdata_conf["active_configs"]:
+            # Get the data, not just the key
+            config = mdata_conf["active_configs"][config]
 
-        return metadata_conf["repositories"]
+            # If the config is a merger job, don't bother with it
+            if config["default"]["type"] == "merger":
+                continue
+            for package in config["repositories"]:
+                # Load defaults in if they're not there, ignore the optionals 
+                for mkey in mdata_req_keys:
+                    if mkey not in package and mkey in config["default"]:
+                        package[mkey] = config["default"][mkey]
+                # Don't proceed if any of the keys in the config are invalid
+                for mkey in package:
+                    if mkey not in mdata_req_keys and mkey not in \
+                       mdata_opt_keys:
+                        raise ValueError("Invalid key present:", mkey)
+                    # Substitute keys in
+                    for skey in mdata_sub_keys:
+                        if skey in package[mkey]:
+                            nkey = package[mkey]
+                            nkey = nkey.replace(skey, mdata_sub_keys[skey])
+                            package[mkey] = nkey
+
+        return mdata_conf
 
     @timer.run("Auth to Jenkins")
     def auth_jenkins_server(self):
@@ -138,38 +166,43 @@ class Generator:
 
         if data is not None:
             url = data["packaging_url"]
-            u_branch = data["packaging_branch_unstable"]
-            s_branch = data["packaging_branch_stable"]
-            u_upload_target = data["upload_target_unstable"]
-            s_upload_target = data["upload_target_stable"]
+            branch = data["packaging_branch"]
+            upload_target = data["upload_target"]
         elif job_type != "release-mgmt":
             raise AttributeError("Data cannot be empty, cannot parse job data.")
 
         if job_type.startswith("package"):
             upstream = data["upstream_url"]
             package_config = template.render(PACKAGING_URL=url,
-                                             PACKAGING_BRANCH_U=u_branch,
-                                             PACKAGING_BRANCH_S=s_branch,
+                                             PACKAGING_BRANCH=branch,
                                              UPSTREAM_URL=upstream,
                                              NAME=data["name"],
                                              RELEASE=data["release"],
-                                             UPLOAD_TARGET_U=u_upload_target,
-                                             UPLOAD_TARGET_S=s_upload_target)
+                                             UPLOAD_TARGET=upload_target)
         elif job_type == "merger":
-            default_branch = data["default_branch"]
-            # HACKY HACKY HACKY
-            # If we can't push to it, the merger job is useless
-            if not "phab.lubuntu.me" in url:
-                with open(path.join("templates", "useless-merger.xml")) as f:
-                    package_config = ""
-                    for text in f.readlines():
-                        package_config += text
-            else:
-                package_config = template.render(PACKAGING_URL=url,
-                                                 PACKAGING_BRANCH_U=u_branch,
-                                                 PACKAGING_BRANCH_S=s_branch,
-                                                 NAME=data["name"],
-                                                 DEFAULT_BRANCH=default_branch)
+            # Cascading merges
+            cascade = ""
+            # Iterate on each value
+            cascading = data["cascade"]
+            for i in range(len(cascading)):
+                # The default branch is first, we know this exists
+                if i == 0:
+                    cascade += "git checkout %s\n" % cascading[0]
+                    continue
+                c = cascading[i]
+                # Create branch if it doesn't exist, check it out
+                cascade += "git branch -a | egrep \"remotes/origin/"
+                cascade += "%s\" &amp;&amp; git checkout %s || git " % (c, c)
+                cascade += "checkout -b %s\n" % c
+                # Fast-forward merge the previous branch in
+                cascade += "git merge --ff-only %s\n" % cascading[i-1]
+                # Push this branch
+                cascade += "git push --set-upstream origin %s\n" % c
+
+            package_config = template.render(PACKAGING_URL=url,
+                                             MERGE_COMMANDS=cascade,
+                                             NAME=data["name"],
+                                             DEFAULT_BRANCH=cascading[0])
         elif job_type == "release-mgmt":
             package_config = template.render()
         else:
@@ -177,29 +210,25 @@ class Generator:
 
         return package_config
 
-    @timer.run("Get existing jobs")
-    def get_existing_jenkins_jobs(self, server):
-        """This returns a tuple of all existing Jenkins jobs
+    @timer.run("Create jobs and add to views")
+    def create_jenkins_job(self, server, config, name, view):
+        """This interacts with the Jenkins API to create the job"""
 
-        This is separated into a different function to make the code slightly
-        more efficient and clean. With generators being difficult to work with
-        and the need for several high-volume variables, this makes sense.
-        """
+        print("Creating %s..." % name)
 
-        # Get the generator object with the jobs and create an empty list
-        s_jobs = server.get_jobs()
-        jobs = []
+        if name in server.keys():
+            job = server.get_job(name)
+            job.update_config(config)
+        else:
+            job = server.create_job(name, str(config))
+            if view in server.views:
+                view = server.views[view]
+            else:
+                view = server.views.create(view)
 
-        # The list from the server is in the following format:
-        # [('JOBNAME', <jenkinsapi.job.Job JOBNAME>)]
-        # We only want JOBNAME, so let's put that in jobs
-        for job_name in s_jobs:
-            jobs.append(job_name[0])
-
-        # Make sure jobs is a tuple
-        jobs = tuple(jobs)
-
-        return jobs
+            # Only add to the view if it's not already in there
+            if not job_name in server.views[view]:
+                view.add_job(job_name)
 
     def create_jenkins_jobs(self):
         """Interface with Jenkins to create the jobs required
@@ -215,92 +244,70 @@ class Generator:
         """
 
         # Authenticate to the Jenkins server
+        print("Authenticated to Jenkins...")
         server = self.auth_jenkins_server()
 
         # Parse the metadata
+        print("Parsing the metadata...")
         metadata = self.parse_metadata()
-
-        # Get a list of existing jobs
-        jobs = self.get_existing_jenkins_jobs(server)
 
         total_rel = set()
 
-        for package in metadata:
-            timer.start("Merger job creation")
-            # Create the merger jobs first
-            job_name = "merger_" + package["name"]
-            package_config = self.load_config("merger", package)
-            # TODO: This is duplicate code, and it should be consolidated
-            if job_name in jobs:
-                job = server.get_job(job_name)
-                job.update_config(package_config)
-            else:
-                job = server.create_job(job_name, str(package_config))
-                if "merger" in server.views:
-                    view = server.views["merger"]
-                else:
-                    view = server.views.create("merger")
-                view.add_job(job_name)
-            timer.stop("Merger job creation")
+        configs = {"merger": [], "stable": [], "unstable": []}
+        # Sort config names into different categories
+        for config in metadata["active_configs"]:
+            config_name = config
+            config = metadata["active_configs"][config]
+            for config_type in configs:
+                if config["default"]["type"] == config_type:
+                    configs[config_type].append(metadata["active_configs"][config_name].copy())
 
-            timer.start("Release job creation")
-            for release in package["releases"]:
-                # Add the release to the total release set, which is used to
-                # generate the management jobs
-                total_rel.add(release)
 
-                # Load the config given the current data
-                package["release"] = release
-                for jobtype in ["unstable", "stable"]:
-                    job_name = release + "_" + jobtype + "_" + package["name"]
-                    package_config = self.load_config("package-" + jobtype,
-                                                      package)
-                    if job_name in jobs:
-                        job = server.get_job(job_name)
-                        job.update_config(str(package_config))
-                    else:
-                        job = server.create_job(job_name, str(package_config))
+        # Create the merger jobs first
+        for config in configs["merger"]:
+            parent = metadata["active_configs"][config["default"]["parent"]]
+            for package in parent["repositories"]:
+                package["cascade"] = config["default"]["cascade"]
+                name = "merger_" + package["name"]
+                p_config = self.load_config("merger", package)
+                self.create_jenkins_job(server, p_config, name, "merger")
 
-                    viewname = release + " " + jobtype
-                    if viewname in server.views:
-                        view = server.views[viewname]
-                    else:
-                        view = server.views.create(viewname)
+        # Create the package jobs
+        for job_type in ["stable", "unstable"]:
+            # This is the actual loop
+            for config in configs[job_type]:
+                # Loop on the individual packages
+                for package in config["repositories"]:
+                    # Loop on each release
+                    for release in package["releases"]:
+                        # Add the release to the total release set, which is
+                        # used to generate the management jobs
+                        total_rel.add(release)
 
-                    view.add_job(job_name)
-            timer.stop("Release job creation")
+                        package["release"] = release
+                        # Get the package config from the template
+                        p_config = self.load_config("package-" + job_type,
+                                                    package)
+                        name = "%s_%s_%s" % (release, job_type,
+                                             package["name"])
+                        view_name = release + " " + job_type
 
-        timer.start("Management job creation")
+                        # Actually create the job
+                        self.create_jenkins_job(server, p_config, name,
+                                                view_name)
+
         # From here on out, the same template is used
-        package_config = self.load_config("release-mgmt")
+        p_config = self.load_config("release-mgmt")
 
         # Generate a management job for every release, stable and unstable
         for release in total_rel:
-            for jobtype in ["unstable", "stable"]:
+            for jobtype in ["stable", "unstable"]:
                 job_name = "mgmt_build_" + release + "_" + jobtype
-                if job_name in jobs:
-                    job = server.get_job(job_name)
-                    job.update_config(package_config)
-                else:
-                    job = server.create_job(job_name, str(package_config))
-
-                # The mgmt view should be the first view created, we don't
-                # have to create it if it doesn't exist because that's a
-                # Huge Problem anyway
-                view = server.views["mgmt"]
-                view.add_job(job_name)
+                self.create_jenkins_job(server, p_config, job_name, "mgmt")
 
         # Generate one last merger management job
-        if "merger" in jobs:
-            job = server.get_job("merger")
-            job.update_config(package_config)
-        else:
-            job = server.create_job("merger", str(package_config))
+        self.create_jenkins_job(server, p_config, "merger", "mgmt")
 
-        view = server.views["mgmt"]
-        view.add_job("merger")
-
-        timer.stop("Management job creation")
 
 
 if __name__ == "__main__":
