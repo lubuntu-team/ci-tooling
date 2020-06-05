@@ -122,7 +122,8 @@ class Generator:
                     for skey in mdata_sub_keys:
                         if skey in package[mkey]:
                             nkey = package[mkey]
-                            nkey = nkey.replace(skey, mdata_sub_keys[skey])
+                            sub_key = package[mdata_sub_keys[skey]]
+                            nkey = nkey.replace(skey, sub_key)
                             package[mkey] = nkey
 
         return mdata_conf
