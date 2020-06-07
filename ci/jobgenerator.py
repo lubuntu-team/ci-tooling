@@ -176,12 +176,22 @@ class Generator:
 
         if job_type.startswith("package"):
             upstream = data["upstream_url"]
+
+            # Parse the upload target into LP team names and PPA names
+            # Example: ppa:lubuntu-ci/unstable-ci-proposed
+            # This becomes ["ppa:lubuntu-ci", "/", "unstable-ci-proposed"]
+            # Of course, this assumes that we're uploading to a PPA
+            lp_info = list(upload_target.partition("/"))
+            lp_info[0] = lp_info[0].replace("ppa:", "")
+
             package_config = template.render(PACKAGING_URL=url,
                                              PACKAGING_BRANCH=branch,
                                              UPSTREAM_URL=upstream,
                                              NAME=data["name"],
                                              RELEASE=data["release"],
-                                             UPLOAD_TARGET=upload_target)
+                                             UPLOAD_TARGET=upload_target,
+                                             LP_TEAM=lp_info[0],
+                                             LP_PPA=lp_info[2])
         elif job_type == "merger":
             # Cascading merges
             cascade = ""

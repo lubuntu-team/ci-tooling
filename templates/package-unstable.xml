@@ -65,13 +65,13 @@ gzip {{ NAME }}_$VERSION.orig.tar;
 (cd {{ NAME }}; dch --distribution {{ RELEASE }} --package "{{ NAME }}" --newversion "$VERSION-0ubuntu1~ppa1" "CI upload."; debuild -S -d -sa -k06DA7DDBBF3117FFE3FB849E4F81E626A09EB338; dput {{ UPLOAD_TARGET }} ../{{ NAME }}_$VERSION-0ubuntu1~ppa1_source.changes)
 sleep 5m;
 git clone https://phab.lubuntu.me/source/ci-tooling.git tooling;
-./tooling/ci/lp_check.py -p {{ NAME }} -v $VERSION-0ubuntu1~ppa1 -t lubuntu-ci -r unstable-ci-proposed;
+./tooling/ci/lp_check.py -p {{ NAME }} -v $VERSION-0ubuntu1~ppa1 -t {{ LP_TEAM }} -r {{ LP_PPA }};
       </command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
       <command>
 export VERSION=&quot;$(head -1 {{ NAME }}/debian/changelog | sed -n &apos;/(/,/)/{:a; $!N; /)/!{$!ba}; s/.*(\([^)]*\)).*/\1/p}&apos; | cut -d &apos;-&apos; -f1)&quot;;
-pull-ppa-debs --ppa=ppa:lubuntu-ci/unstable-ci-proposed {{ NAME }} $VERSION-0ubuntu1~ppa1;
+pull-ppa-debs --ppa={{ UPLOAD_TARGET }} {{ NAME }} $VERSION-0ubuntu1~ppa1;
 lintian --fail-on=error,warning --suppress-tags orig-tarball-missing-upstream-signature,package-has-long-file-name -EvIL +pedantic *.dsc *.deb;
       </command>
       <unstableReturn>2</unstableReturn>
