@@ -298,7 +298,8 @@ class Generator:
                                                     package)
                         name = "%s_%s_%s" % (release, config_name,
                                              package["name"])
-                        view_name = release + " " + job_type
+                        view_name = release + " " + \
+                                config_name.replace("_", " ")
 
                         # Actually create the job
                         self.create_jenkins_job(server, p_config, name,
