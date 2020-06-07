@@ -228,9 +228,7 @@ class Generator:
             else:
                 view = server.views.create(view)
 
-            # Only add to the view if it's not already in there
-            if not name in server.views[view]:
-                view.add_job(name)
+            view.add_job(name)
 
     @timer.run("Master function loop")
     def create_jenkins_jobs(self):
